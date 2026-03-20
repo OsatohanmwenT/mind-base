@@ -2,6 +2,17 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Create a local env file before starting the app:
+
+```bash
+cp .env.example .env.local
+```
+
+The InsForge auth integration requires:
+
+- `NEXT_PUBLIC_INSFORGE_URL`
+- `INSFORGE_ANON_KEY`
+
 First, run the development server:
 
 ```bash
