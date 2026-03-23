@@ -26,9 +26,9 @@ export default async function ForgotPasswordPage({
 
   return (
     <AuthShell
-      eyebrow="Password Reset"
-      title="Send a reset code"
-      description="We use code-based password reset for this project. Enter your email and we’ll send the 6-digit code if the account exists."
+      eyebrow="Account recovery"
+      title="Reset your password"
+      description="Enter your email and we’ll send you a code to get back in."
       footer={
         <Link
           href="/auth/sign-in"
@@ -39,9 +39,8 @@ export default async function ForgotPasswordPage({
       }
     >
       {authConfig.resetPasswordMethod !== "code" ? (
-        <div className="rounded-2xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-          This project is currently configured for link-based password reset, so
-          the code-based reset flow has been disabled.
+        <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          Code-based password reset is not available at the moment.
         </div>
       ) : (
         <ForgotPasswordForm initialEmail={email} />

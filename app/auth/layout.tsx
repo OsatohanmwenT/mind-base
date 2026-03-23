@@ -1,8 +1,26 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ShieldCheck, Sparkles } from "lucide-react";
+import { Lock, Search, Sparkles } from "lucide-react";
 
 import { ModeToggle } from "@/components/mode-toggle";
+
+const VALUE_PROPS = [
+  {
+    icon: Lock,
+    title: "Private by default",
+    description: "Your notes live in a personal vault, fully isolated.",
+  },
+  {
+    icon: Search,
+    title: "Search by meaning",
+    description: "Describe what you need — no exact keywords required.",
+  },
+  {
+    icon: Sparkles,
+    title: "AI-organized",
+    description: "Generate titles, summaries, and tags from your notes.",
+  },
+];
 
 export default function AuthLayout({
   children,
@@ -10,60 +28,61 @@ export default function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,oklch(0.55_0.08_185_/_0.08),transparent_32%),linear-gradient(to_bottom,transparent,oklch(0.55_0.08_185_/_0.03))]">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6 py-8 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-8">
-        <div className="mb-10 flex items-center justify-between lg:col-start-2 lg:mb-0 lg:justify-end">
-          <Link href="/" className="text-lg font-semibold tracking-tight lg:hidden">
-            MindBase
-          </Link>
-          <ModeToggle />
-        </div>
+    <div className="flex min-h-dvh flex-col bg-background lg:flex-row">
+      <header className="flex items-center justify-between px-6 py-5 lg:hidden">
+        <Link
+          href="/"
+          className="font-[family:var(--font-heading)] text-lg font-semibold"
+        >
+          MindBase
+        </Link>
+        <ModeToggle />
+      </header>
 
-        <section className="hidden flex-col justify-between rounded-[32px] border border-border/60 bg-background/65 p-10 shadow-[0_24px_90px_-54px_rgba(0,0,0,0.45)] backdrop-blur-sm lg:flex">
-          <div>
-            <Link href="/" className="text-lg font-semibold tracking-tight">
+      <aside className="hidden border-r border-border bg-muted/50 lg:flex lg:w-[480px] lg:shrink-0 lg:flex-col lg:justify-between lg:p-12 xl:p-14">
+        <div>
+          <div className="flex items-center justify-between">
+            <Link
+              href="/"
+              className="font-[family:var(--font-heading)] text-lg font-semibold"
+            >
               MindBase
             </Link>
-
-            <div className="mt-16 space-y-6">
-              <p className="font-mono text-xs uppercase tracking-[0.26em] text-muted-foreground">
-                Authenticated workspace
-              </p>
-              <h2 className="max-w-md text-4xl font-semibold tracking-tight text-balance">
-                Keep note capture public-facing and the workspace properly
-                protected.
-              </h2>
-              <p className="max-w-md text-base leading-7 text-muted-foreground">
-                Sessions stay in first-party httpOnly cookies, auth mutations
-                stay on the server, and `/notes` becomes the first protected
-                destination after sign-in.
-              </p>
-            </div>
+            <ModeToggle />
           </div>
 
-          <div className="grid gap-4">
-            <div className="rounded-3xl border border-border/70 bg-background/80 p-5">
-              <ShieldCheck className="h-5 w-5 text-foreground" />
-              <p className="mt-3 text-sm font-medium">Cookie-backed sessions</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Access and refresh tokens never touch client-readable storage.
-              </p>
-            </div>
-            <div className="rounded-3xl border border-border/70 bg-background/80 p-5">
-              <Sparkles className="h-5 w-5 text-foreground" />
-              <p className="mt-3 text-sm font-medium">Server-first flows</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Sign-up, verification, reset, sign-out, refresh, and OAuth all
-                complete without exposing auth state to client components.
-              </p>
-            </div>
+          <div className="mt-20 max-w-sm">
+            <h2 className="font-[family:var(--font-heading)] text-3xl font-semibold leading-snug text-balance">
+              Your second brain for code, ideas, and context.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty">
+              A private note vault for engineers. Capture thinking quickly, let
+              AI organize it, and find anything later — by meaning, not
+              keywords.
+            </p>
           </div>
-        </section>
-
-        <div className="flex flex-1 items-center justify-center lg:col-start-2">
-          {children}
         </div>
-      </div>
-    </main>
+
+        <div className="max-w-sm space-y-5">
+          {VALUE_PROPS.map(({ icon: Icon, title, description }) => (
+            <div key={title} className="flex items-start gap-3.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
+                <Icon className="size-3.5 text-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{title}</p>
+                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+                  {description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      <main className="flex flex-1 items-center justify-center px-6 py-12 lg:px-16 lg:py-0">
+        {children}
+      </main>
+    </div>
   );
 }

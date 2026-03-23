@@ -17,18 +17,16 @@ export function AuthShell({
 }: AuthShellProps) {
   return (
     <section className="w-full max-w-md">
-      <div className="rounded-[28px] border border-border/70 bg-background/85 p-6 shadow-[0_24px_80px_-48px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:p-8">
-        <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
-          {eyebrow}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          {description}
-        </p>
-        <div className="mt-8">{children}</div>
-      </div>
+      <p className="text-xs font-medium uppercase text-muted-foreground">
+        {eyebrow}
+      </p>
+      <h1 className="mt-2 text-2xl font-semibold text-balance">{title}</h1>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
+        {description}
+      </p>
+      <div className="mt-8">{children}</div>
       {footer ? (
-        <div className="mt-5 text-center text-sm text-muted-foreground">
+        <div className="mt-6 text-center text-sm text-muted-foreground">
           {footer}
         </div>
       ) : null}

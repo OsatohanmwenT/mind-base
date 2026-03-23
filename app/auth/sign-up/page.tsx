@@ -29,9 +29,9 @@ export default async function SignUpPage({ searchParams }: PageProps) {
 
   return (
     <AuthShell
-      eyebrow="Create Account"
-      title="Set up your workspace"
-      description="Create your account, verify the 6-digit email code on the same screen, and land directly in `/notes` once the session is established."
+      eyebrow="Get started"
+      title="Create your vault"
+      description="Set up your private workspace in seconds."
       footer={
         <>
           Already have an account?{" "}
@@ -45,9 +45,8 @@ export default async function SignUpPage({ searchParams }: PageProps) {
       }
     >
       {authConfig.verifyEmailMethod !== "code" ? (
-        <div className="rounded-2xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-          This project is currently configured for link-based email verification,
-          so the code-based sign-up flow has been disabled.
+        <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          Email sign-up is not available at the moment.
         </div>
       ) : (
         <div className="space-y-6">
@@ -62,8 +61,8 @@ export default async function SignUpPage({ searchParams }: PageProps) {
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border" />
               </div>
-              <div className="relative flex justify-center text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                <span className="bg-background px-3">or use email</span>
+              <div className="relative flex justify-center text-xs text-muted-foreground">
+                <span className="bg-background px-3">or</span>
               </div>
             </div>
           ) : null}

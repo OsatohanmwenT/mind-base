@@ -24,9 +24,9 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
 
   return (
     <AuthShell
-      eyebrow="Password Reset"
-      title="Verify your reset code"
-      description="Exchange the email reset code on the server, then set a new password without exposing reset tokens to client code."
+      eyebrow="Almost there"
+      title="Enter your reset code"
+      description="Check your email for the 6-digit code we sent you."
       footer={
         <Link
           href={`/auth/forgot-password?email=${encodeURIComponent(email)}`}
@@ -37,9 +37,8 @@ export default async function ResetPasswordPage({ searchParams }: PageProps) {
       }
     >
       {authConfig.resetPasswordMethod !== "code" ? (
-        <div className="rounded-2xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-          This project is currently configured for link-based password reset, so
-          the code-based reset flow has been disabled.
+        <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+          Code-based password reset is not available at the moment.
         </div>
       ) : (
         <ResetPasswordForm

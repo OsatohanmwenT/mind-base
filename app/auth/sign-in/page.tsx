@@ -23,11 +23,11 @@ function getSignInMessage(
 
   switch (errorCode) {
     case "oauth_callback_failed":
-      return "OAuth sign-in failed. Try again or use email and password.";
+      return "Sign-in failed. Please try again or use email and password.";
     case "oauth_start_failed":
-      return "Unable to start OAuth right now. Try again.";
+      return "Unable to sign in right now. Please try again.";
     case "oauth_provider_unavailable":
-      return "That OAuth provider is not enabled for this project.";
+      return "That sign-in method is not available.";
     default:
       return null;
   }
@@ -51,9 +51,9 @@ export default async function SignInPage({ searchParams }: PageProps) {
 
   return (
     <AuthShell
-      eyebrow="Welcome Back"
-      title="Log in to MindBase"
-      description="Continue into your private notes workspace. Email/password and configured OAuth providers both terminate in the same cookie-backed session."
+      eyebrow="Welcome back"
+      title="Sign in to your vault"
+      description="Pick up where you left off."
       footer={
         <>
           Need an account?{" "}
@@ -78,8 +78,8 @@ export default async function SignInPage({ searchParams }: PageProps) {
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              <span className="bg-background px-3">or use email</span>
+            <div className="relative flex justify-center text-xs text-muted-foreground">
+              <span className="bg-background px-3">or</span>
             </div>
           </div>
         ) : null}
