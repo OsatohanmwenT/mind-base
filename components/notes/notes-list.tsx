@@ -1,6 +1,6 @@
 "use client";
 
-import type { Note } from "@/lib/notes/types";
+import type { Note, NotesSearchMode } from "@/lib/notes/types";
 import { NoteListItem } from "./note-list-item";
 import { EmptyLibraryState } from "./empty-library-state";
 
@@ -9,6 +9,7 @@ interface NotesListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   isFiltered: boolean;
+  searchMode: NotesSearchMode;
 }
 
 export function NotesList({
@@ -16,9 +17,15 @@ export function NotesList({
   selectedId,
   onSelect,
   isFiltered,
+  searchMode,
 }: NotesListProps) {
   if (notes.length === 0) {
-    return <EmptyLibraryState isFiltered={isFiltered} />;
+    return (
+      <EmptyLibraryState
+        isFiltered={isFiltered}
+        searchMode={searchMode}
+      />
+    );
   }
 
   return (

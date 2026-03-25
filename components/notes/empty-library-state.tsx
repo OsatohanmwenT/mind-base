@@ -1,10 +1,15 @@
 import { FileText, Search } from "lucide-react";
+import type { NotesSearchMode } from "@/lib/notes/types";
 
 interface EmptyLibraryStateProps {
   isFiltered: boolean;
+  searchMode?: NotesSearchMode;
 }
 
-export function EmptyLibraryState({ isFiltered }: EmptyLibraryStateProps) {
+export function EmptyLibraryState({
+  isFiltered,
+  searchMode = "browse",
+}: EmptyLibraryStateProps) {
   if (isFiltered) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -12,10 +17,14 @@ export function EmptyLibraryState({ isFiltered }: EmptyLibraryStateProps) {
           <Search className="h-5 w-5 text-muted-foreground/50" />
         </div>
         <p className="mt-4 text-sm font-medium text-muted-foreground">
-          No notes match your filters
+          {searchMode === "semantic"
+            ? "No notes matched your semantic search"
+            : "No notes match your filters"}
         </p>
         <p className="mt-1 text-xs text-muted-foreground/60">
-          Try a different search term or clear your active tags.
+          {searchMode === "semantic"
+            ? "Try a more specific phrase, or clear your active tags."
+            : "Try a different search term or clear your active tags."}
         </p>
       </div>
     );

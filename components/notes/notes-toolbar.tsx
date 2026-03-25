@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, X, Command } from "lucide-react";
+import { Search, X } from "lucide-react";
+
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { SortMode } from "@/lib/notes/types";
+import { defaultNotesSortMode, notesSortModes } from "@/lib/notes/search-params";
+import type { NotesSearchMode, SortMode } from "@/lib/notes/types";
 
 interface NotesToolbarProps {
   query: string;
@@ -20,15 +22,18 @@ interface NotesToolbarProps {
   onToggleTag: (tag: string) => void;
   sortMode: SortMode;
   onSortChange: (mode: SortMode) => void;
+  onClearFilters: () => void;
   resultCount: number;
   totalCount: number;
+  isPending: boolean;
+  searchMode: NotesSearchMode;
 }
 
-const SORT_OPTIONS: { value: SortMode; label: string }[] = [
-  { value: "updated", label: "Recently updated" },
-  { value: "created", label: "Recently created" },
-  { value: "alpha", label: "A – Z" },
-];
+const SORT_OPTION_LABELS: Record<SortMode, string> = {
+  updated: "Recently updated",
+  created: "Recently created",
+  alpha: "A – Z",
+};
 
 export function NotesToolbar({
   query,
@@ -38,13 +43,19 @@ export function NotesToolbar({
   onToggleTag,
   sortMode,
   onSortChange,
+  onClearFilters,
   resultCount,
   totalCount,
+  isPending,
+  searchMode,
 }: NotesToolbarProps) {
   const isFiltered = query.trim() !== "" || activeTags.length > 0;
+  const hasCustomState = isFiltered || sortMode !== defaultNotesSortMode;
+  const isSemanticMode = searchMode === "semantic";
+  const isFallbackMode = searchMode === "fallback" && query.trim() !== "";
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" aria-busy={isPending}>
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
@@ -65,19 +76,30 @@ export function NotesToolbar({
           )}
         </div>
 
-        <div className="hidden sm:flex items-center gap-1 rounded-md border border-border/70 bg-background/60 px-2.5 py-1.5 text-[11px] text-muted-foreground/50 select-none">
-          <Command className="h-3 w-3" />
-          <span className="font-mono">K</span>
-        </div>
-
-        <Select value={sortMode} onValueChange={(v) => onSortChange(v as SortMode)}>
-          <SelectTrigger size="sm" className="text-xs text-muted-foreground" aria-label="Sort notes">
+        <Select
+          value={sortMode}
+          disabled={isSemanticMode}
+          onValueChange={(value) => {
+            if (
+              value === notesSortModes[0] ||
+              value === notesSortModes[1] ||
+              value === notesSortModes[2]
+            ) {
+              onSortChange(value);
+            }
+          }}
+        >
+          <SelectTrigger
+            size="sm"
+            className="text-xs text-muted-foreground"
+            aria-label="Sort notes"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SORT_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
+            {notesSortModes.map((mode) => (
+              <SelectItem key={mode} value={mode}>
+                {SORT_OPTION_LABELS[mode]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -116,17 +138,28 @@ export function NotesToolbar({
       )}
 
       <div className="flex items-center justify-between text-[11px] text-muted-foreground/60">
-        <span>
-          {isFiltered
-            ? `${resultCount} of ${totalCount} notes`
-            : `${totalCount} notes`}
-        </span>
-        {isFiltered && (
+        <div className="flex items-center gap-2">
+          <span>
+            {isSemanticMode
+              ? `${resultCount} semantic matches from ${totalCount} notes`
+              : isFiltered
+                ? `${resultCount} of ${totalCount} notes`
+                : `${totalCount} notes`}
+          </span>
+          {isSemanticMode && (
+            <Badge variant="secondary" className="font-mono text-[10px]">
+              relevance
+            </Badge>
+          )}
+          {isFallbackMode && (
+            <Badge variant="outline" className="font-mono text-[10px]">
+              keyword fallback
+            </Badge>
+          )}
+        </div>
+        {hasCustomState && (
           <button
-            onClick={() => {
-              onQueryChange("");
-              activeTags.forEach((tag) => onToggleTag(tag));
-            }}
+            onClick={onClearFilters}
             className="hover:text-foreground transition-colors"
           >
             Clear filters

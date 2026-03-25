@@ -13,6 +13,10 @@ The InsForge auth integration requires:
 - `NEXT_PUBLIC_INSFORGE_URL`
 - `INSFORGE_ANON_KEY`
 
+Semantic search uses this optional setting:
+
+- `INSFORGE_EMBEDDING_MODEL` defaults to `openai/text-embedding-3-small`
+
 First, run the development server:
 
 ```bash

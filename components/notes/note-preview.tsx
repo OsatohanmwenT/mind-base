@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Calendar,
   Clock,
@@ -112,11 +113,12 @@ export function NotePreview({ note }: NotePreviewProps) {
           variant="outline"
           size="sm"
           className="h-8 text-xs gap-1.5"
-          disabled
-          title="Note editing coming soon"
+          asChild
         >
-          Open note
-          <ArrowRight className="h-3 w-3" />
+          <Link href={`/notes/${note.id}`}>
+            Open note
+            <ArrowRight className="h-3 w-3" />
+          </Link>
         </Button>
         <Button
           variant="ghost"

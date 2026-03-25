@@ -1,6 +1,15 @@
-export type NoteStatus = "draft" | "organized";
+import type { NotesSearchParams } from "./search-params";
 
-export type SortMode = "updated" | "created" | "alpha";
+export type NoteStatus = "draft" | "organized";
+export type NoteEditorSaveState =
+  | "clean"
+  | "dirty"
+  | "saving"
+  | "saved"
+  | "error";
+export type NotesSearchMode = "browse" | "semantic" | "fallback";
+
+export type SortMode = NotesSearchParams["sort"];
 
 export interface Note {
   id: string;
@@ -14,4 +23,10 @@ export interface Note {
   wordCount: number;
   status: NoteStatus;
   isPinned?: boolean;
+}
+
+export interface NotesListResult {
+  notes: Note[];
+  totalCount: number;
+  searchMode: NotesSearchMode;
 }
