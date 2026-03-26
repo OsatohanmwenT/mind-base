@@ -8,6 +8,7 @@ export type NoteEditorSaveState =
   | "saved"
   | "error";
 export type NotesSearchMode = "browse" | "semantic" | "fallback";
+export type NoteImageStatus = "pending" | "uploaded" | "failed";
 
 export type SortMode = NotesSearchParams["sort"];
 
@@ -25,8 +26,91 @@ export interface Note {
   isPinned?: boolean;
 }
 
+export interface NoteImage {
+  id: string;
+  noteId: string;
+  bucket: string;
+  storageKey: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  sortOrder: number;
+  status: NoteImageStatus;
+  uploadedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastError: string | null;
+  readUrl: string | null;
+  readUrlExpiresAt: string | null;
+}
+
+export interface RequestNoteImageUploadInput {
+  filename: string;
+  mimeType: string;
+  size: number;
+}
+
+export interface NoteImageUploadTarget {
+  uploadUrl: string;
+  fields: Record<string, string>;
+  confirmUrl: string | null;
+  expiresAt: string | null;
+}
+
+export interface RequestNoteImageUploadResult {
+  image: NoteImage;
+  upload: NoteImageUploadTarget;
+}
+
+export interface CompleteNoteImageUploadInput {
+  imageId: string;
+  confirmUrl?: string | null;
+}
+
+export interface CompleteNoteImageUploadResult {
+  image: NoteImage;
+}
+
+export interface RefreshNoteImageReadUrlResult {
+  readUrl: string;
+  expiresAt: string | null;
+}
+
+export interface DeleteNoteImageResult {
+  imageId: string;
+}
+
+export interface FailNoteImageUploadInput {
+  imageId: string;
+  error?: string;
+}
+
+export interface FailNoteImageUploadResult {
+  image: NoteImage;
+}
+
 export interface NotesListResult {
   notes: Note[];
   totalCount: number;
   searchMode: NotesSearchMode;
+}
+
+export type CommandPaletteSearchMode = "semantic" | "fallback";
+
+export interface CommandPaletteNoteItem {
+  kind: "note";
+  id: string;
+  title: string;
+  snippet: string;
+  tags: string[];
+  updatedAt: string;
+  status: NoteStatus;
+}
+
+export type CommandPaletteItem = CommandPaletteNoteItem;
+
+export interface CommandPaletteResult {
+  items: CommandPaletteItem[];
+  searchMode: CommandPaletteSearchMode;
+  error: string | null;
 }

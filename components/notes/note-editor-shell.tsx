@@ -10,7 +10,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { updateNoteAction } from "@/app/notes/actions";
-import type { Note } from "@/lib/notes/types";
+import type { Note, NoteImage } from "@/lib/notes/types";
 import {
   MAX_NOTE_TAG_LENGTH,
   MAX_NOTE_TAGS,
@@ -21,12 +21,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 import { NoteEditorHeader } from "./note-editor-header";
+import { NoteImagesPanel } from "./note-images-panel";
 import { NewNoteTagsInput } from "./new-note-tags-input";
 
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
 interface NoteEditorShellProps {
   initialNote: Note;
+  initialImages: NoteImage[];
   suggestedTags: string[];
 }
 
@@ -60,6 +62,7 @@ function sortTags(tags: string[]) {
 
 export function NoteEditorShell({
   initialNote,
+  initialImages,
   suggestedTags,
 }: NoteEditorShellProps) {
   const router = useRouter();
@@ -77,6 +80,7 @@ export function NoteEditorShell({
     initialNote.updatedAt
   );
   const [hasSavedSinceLoad, setHasSavedSinceLoad] = useState(false);
+  const [hasActiveUploads, setHasActiveUploads] = useState(false);
 
   const wordCount = useMemo(() => countWords(content), [content]);
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
@@ -255,7 +259,7 @@ export function NoteEditorShell({
   ]);
 
   useEffect(() => {
-    if (!isDirty && !isSaving) {
+    if (!isDirty && !isSaving && !hasActiveUploads) {
       return;
     }
 
@@ -269,7 +273,7 @@ export function NoteEditorShell({
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isDirty, isSaving]);
+  }, [hasActiveUploads, isDirty, isSaving]);
 
   const handleAddTag = useCallback(
     (tag: string) => {
@@ -297,14 +301,18 @@ export function NoteEditorShell({
 
   const handleBack = useCallback(() => {
     if (
-      (isDirty || isSaving) &&
-      !window.confirm("You have unsaved changes. Leave this note?")
+      (isDirty || isSaving || hasActiveUploads) &&
+      !window.confirm(
+        hasActiveUploads
+          ? "An image upload is still in progress. Leave this note?"
+          : "You have unsaved changes. Leave this note?"
+      )
     ) {
       return;
     }
 
     router.push("/notes");
-  }, [isDirty, isSaving, router]);
+  }, [hasActiveUploads, isDirty, isSaving, router]);
 
   return (
     <div className="mx-auto w-full max-w-3xl flex flex-col gap-6">
@@ -359,6 +367,12 @@ export function NoteEditorShell({
         onRemoveTag={handleRemoveTag}
       />
 
+      <NoteImagesPanel
+        noteId={initialNote.id}
+        initialImages={initialImages}
+        onUploadActivityChange={setHasActiveUploads}
+      />
+
       <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground/50">
         <Badge
           variant="outline"
@@ -385,6 +399,12 @@ export function NoteEditorShell({
           <>
             <span className="font-mono">&middot;</span>
             <span className="font-mono text-primary/60">local changes</span>
+          </>
+        )}
+        {hasActiveUploads && (
+          <>
+            <span className="font-mono">&middot;</span>
+            <span className="font-mono text-primary/60">uploading images</span>
           </>
         )}
       </div>

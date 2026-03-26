@@ -4,13 +4,15 @@ import { readAuthCookies } from "@/lib/auth/cookies";
 import { createInsforgeServerClient } from "@/lib/insforge/server";
 
 import { STARTER_NOTE_TAGS } from "./constants";
-import { countWords, normalizeTags } from "./normalization";
+import { countWords, getNoteDisplayTitle, normalizeTags } from "./normalization";
 import {
   getMinSemanticQueryLength,
   getSemanticResultLimit,
   searchNotesSemantic,
 } from "./semantic";
 import type {
+  CommandPaletteItem,
+  CommandPaletteResult,
   Note,
   NoteStatus,
   NotesListResult,
@@ -26,6 +28,7 @@ interface NoteRecord {
   status: NoteStatus;
   created_at: string;
   updated_at: string;
+  image_count: number | null;
 }
 
 export interface NoteWithTagsRecord extends NoteRecord {
@@ -56,7 +59,7 @@ export function mapNoteRecord(record: NoteWithTagsRecord): Note {
     tags: record.tags ?? [],
     updatedAt: record.updated_at,
     createdAt: record.created_at,
-    imageCount: 0,
+    imageCount: Number(record.image_count ?? 0),
     wordCount: countWords(record.content),
     status: record.status,
     isPinned: false,
@@ -203,4 +206,102 @@ export async function listSuggestedTagsForCurrentUser(): Promise<string[]> {
     ...usedTags,
     ...STARTER_NOTE_TAGS.filter((tag) => !usedTagSet.has(tag)),
   ];
+}
+
+const PALETTE_RESULT_LIMIT = 10;
+const PALETTE_SNIPPET_LENGTH = 120;
+const PALETTE_MAX_TAGS = 3;
+
+interface PaletteLexicalRecord extends NoteWithTagsRecord {
+  match_rank: number;
+}
+
+function buildPaletteSnippet(summary: string, content: string): string {
+  if (summary.trim()) {
+    return summary.length > PALETTE_SNIPPET_LENGTH
+      ? summary.slice(0, PALETTE_SNIPPET_LENGTH) + "…"
+      : summary;
+  }
+
+  const trimmed = content.trim();
+  if (!trimmed) return "";
+  return trimmed.length > PALETTE_SNIPPET_LENGTH
+    ? trimmed.slice(0, PALETTE_SNIPPET_LENGTH) + "…"
+    : trimmed;
+}
+
+function mapRecordToPaletteItem(record: NoteWithTagsRecord): CommandPaletteItem {
+  return {
+    kind: "note",
+    id: record.id,
+    title: getNoteDisplayTitle(record.title),
+    snippet: buildPaletteSnippet(record.summary, record.content),
+    tags: (record.tags ?? []).slice(0, PALETTE_MAX_TAGS),
+    updatedAt: record.updated_at,
+    status: record.status,
+  };
+}
+
+export async function searchNotesForCommandMenu(
+  query: string
+): Promise<CommandPaletteResult> {
+  const accessToken = await requireInsforgeAccessToken();
+
+  if (!accessToken) {
+    return { items: [], searchMode: "fallback", error: "Session expired." };
+  }
+
+  const trimmed = query.trim();
+  if (!trimmed || trimmed.length < 2) {
+    return { items: [], searchMode: "fallback", error: null };
+  }
+
+  const insforge = createInsforgeServerClient(accessToken);
+
+  async function loadLexicalPalette(): Promise<CommandPaletteItem[]> {
+    const { data, error } = await insforge.database.rpc("search_notes_palette", {
+      p_query: trimmed,
+      p_limit: PALETTE_RESULT_LIMIT,
+    });
+
+    if (error) {
+      throw new Error(error.message || "Keyword search failed.");
+    }
+
+    return ((data ?? []) as PaletteLexicalRecord[]).map(mapRecordToPaletteItem);
+  }
+
+  if (trimmed.length < getMinSemanticQueryLength()) {
+    try {
+      const items = await loadLexicalPalette();
+      return { items, searchMode: "fallback", error: null };
+    } catch {
+      return { items: [], searchMode: "fallback", error: "Search failed." };
+    }
+  }
+
+  try {
+    const semanticRecords = await searchNotesSemantic(accessToken, {
+      query: trimmed,
+      tags: [],
+      limit: PALETTE_RESULT_LIMIT,
+    });
+
+    const items = (semanticRecords as (NoteWithTagsRecord & { similarity: number })[])
+      .map(mapRecordToPaletteItem);
+
+    if (items.length > 0) {
+      return { items, searchMode: "semantic", error: null };
+    }
+
+    const fallbackItems = await loadLexicalPalette();
+    return { items: fallbackItems, searchMode: "fallback", error: null };
+  } catch {
+    try {
+      const fallbackItems = await loadLexicalPalette();
+      return { items: fallbackItems, searchMode: "fallback", error: null };
+    } catch {
+      return { items: [], searchMode: "fallback", error: "Search failed." };
+    }
+  }
 }

@@ -11,9 +11,10 @@ import {
 } from "@/lib/notes/semantic";
 import {
   mapNoteRecord,
+  searchNotesForCommandMenu,
   type NoteWithTagsRecord,
 } from "@/lib/notes/server";
-import type { Note } from "@/lib/notes/types";
+import type { CommandPaletteResult, Note } from "@/lib/notes/types";
 import {
   MAX_NOTE_TAG_LENGTH,
   MAX_NOTE_TAGS,
@@ -265,4 +266,10 @@ export async function updateNoteAction(
     error: null,
     note: mapNoteRecord(noteRecord),
   };
+}
+
+export async function searchNotesForCommandMenuAction(
+  query: string
+): Promise<CommandPaletteResult> {
+  return searchNotesForCommandMenu(query);
 }

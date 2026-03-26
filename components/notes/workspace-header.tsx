@@ -5,6 +5,7 @@ import { signOutAction } from "@/app/auth/actions";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { CommandMenuTrigger } from "./command-menu-trigger";
 
 export function WorkspaceHeader() {
   return (
@@ -19,6 +20,7 @@ export function WorkspaceHeader() {
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        <CommandMenuTrigger />
         <Button
           variant="default"
           size="sm"
