@@ -6,15 +6,27 @@ import { redirect } from "next/navigation";
 import { readAuthCookies } from "@/lib/auth/cookies";
 import { createInsforgeServerClient } from "@/lib/insforge/server";
 import {
+  generateAutoOrganizeSuggestion,
+  hashAutoOrganizeSource,
+  savePreferredAutoOrganizeModel,
+} from "@/lib/notes/auto-organize";
+import {
   markNoteEmbeddingFailed,
   upsertNoteEmbedding,
 } from "@/lib/notes/semantic";
 import {
+  getNoteByIdForCurrentUser,
   mapNoteRecord,
   searchNotesForCommandMenu,
   type NoteWithTagsRecord,
 } from "@/lib/notes/server";
-import type { CommandPaletteResult, Note } from "@/lib/notes/types";
+import type {
+  AutoOrganizeApplyInput,
+  AutoOrganizeApplyResult,
+  AutoOrganizeGenerateResult,
+  CommandPaletteResult,
+  Note,
+} from "@/lib/notes/types";
 import {
   MAX_NOTE_TAG_LENGTH,
   MAX_NOTE_TAGS,
@@ -36,6 +48,11 @@ export type UpdateNoteActionInput = {
 export type UpdateNoteActionResult = {
   error: string | null;
   note: Note | null;
+};
+
+export type GenerateAutoOrganizeActionInput = {
+  noteId: string;
+  modelId: string;
 };
 
 function readString(value: FormDataEntryValue | null) {
@@ -97,6 +114,23 @@ function validateNotePayload(input: {
     title,
     content,
     normalizedTags: normalizeTags(rawTags),
+  };
+}
+
+async function getCurrentUserOrError(accessToken: string) {
+  const insforge = createInsforgeServerClient(accessToken);
+  const {
+    data: authData,
+    error: authError,
+  } = await insforge.auth.getCurrentUser();
+
+  if (authError || !authData.user) {
+    throw new Error(authError?.message || "Unable to resolve current user.");
+  }
+
+  return {
+    insforge,
+    user: authData.user,
   };
 }
 
@@ -272,4 +306,190 @@ export async function searchNotesForCommandMenuAction(
   query: string
 ): Promise<CommandPaletteResult> {
   return searchNotesForCommandMenu(query);
+}
+
+export async function generateAutoOrganizeSuggestionAction(
+  input: GenerateAutoOrganizeActionInput
+): Promise<AutoOrganizeGenerateResult> {
+  const { accessToken } = await readAuthCookies();
+
+  if (!accessToken) {
+    return {
+      error: "Your session expired. Sign in again and try auto-organizing.",
+      suggestion: null,
+    };
+  }
+
+  const note = await getNoteByIdForCurrentUser(input.noteId);
+
+  if (!note) {
+    return {
+      error: "Unable to load that note.",
+      suggestion: null,
+    };
+  }
+
+  if (!input.modelId.trim()) {
+    return {
+      error: "Choose an AI model before running auto-organize.",
+      suggestion: null,
+    };
+  }
+
+  try {
+    const { user } = await getCurrentUserOrError(accessToken);
+    const suggestion = await generateAutoOrganizeSuggestion(accessToken, {
+      noteId: note.id,
+      requestedModelId: input.modelId.trim(),
+      title: note.title,
+      content: note.content,
+      userTags: note.userTags ?? [],
+    });
+
+    await savePreferredAutoOrganizeModel(accessToken, user.id, suggestion.modelId);
+
+    return {
+      error: null,
+      suggestion,
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unable to auto-organize this note right now.",
+      suggestion: null,
+    };
+  }
+}
+
+export async function applyAutoOrganizeAction(
+  input: AutoOrganizeApplyInput
+): Promise<AutoOrganizeApplyResult> {
+  const title = input.title.trim();
+  const summary = input.summary.trim();
+  const normalizedTags = normalizeTags(input.tags).slice(0, 3);
+
+  if (!title) {
+    return {
+      error: "The generated title was empty. Run auto-organize again.",
+      note: null,
+    };
+  }
+
+  if (!summary) {
+    return {
+      error: "The generated summary was empty. Run auto-organize again.",
+      note: null,
+    };
+  }
+
+  const { accessToken } = await readAuthCookies();
+
+  if (!accessToken) {
+    return {
+      error: "Your session expired. Sign in again and try auto-organizing.",
+      note: null,
+    };
+  }
+
+  const note = await getNoteByIdForCurrentUser(input.noteId);
+
+  if (!note) {
+    return {
+      error: "Unable to load that note.",
+      note: null,
+    };
+  }
+
+  const nextUniqueAiTagCount = normalizedTags.filter(
+    (tag) => !(note.userTags ?? []).includes(tag)
+  ).length;
+
+  if ((note.userTags ?? []).length + nextUniqueAiTagCount > MAX_NOTE_TAGS) {
+    return {
+      error:
+        "There is not enough room to add the AI tags without removing manual tags first.",
+      note: null,
+    };
+  }
+
+  const expectedHash = hashAutoOrganizeSource({
+    title: note.title,
+    content: note.content,
+    userTags: note.userTags ?? [],
+  });
+
+  if (input.sourceHash !== expectedHash) {
+    return {
+      error: "This note changed after the suggestions were generated. Run auto-organize again.",
+      note: null,
+    };
+  }
+
+  try {
+    const { insforge } = await getCurrentUserOrError(accessToken);
+    const { data, error } = await insforge.database.rpc(
+      "apply_note_auto_organization",
+      {
+        p_note_id: input.noteId,
+        p_title: title,
+        p_summary: summary,
+        p_ai_tags: normalizedTags,
+      }
+    );
+
+    if (error) {
+      return {
+        error: error.message || "Unable to apply the auto-organize suggestions.",
+        note: null,
+      };
+    }
+
+    const noteRecord = (data ?? [])[0] as NoteWithTagsRecord | undefined;
+
+    if (!noteRecord) {
+      return {
+        error: "Unable to load the updated note.",
+        note: null,
+      };
+    }
+
+    try {
+      await upsertNoteEmbedding(accessToken, {
+        noteId: noteRecord.id,
+        userId: noteRecord.user_id,
+        title: noteRecord.title,
+        summary: noteRecord.summary,
+        content: noteRecord.content,
+      });
+    } catch (embeddingError) {
+      try {
+        await markNoteEmbeddingFailed(
+          accessToken,
+          noteRecord.id,
+          noteRecord.user_id,
+          embeddingError instanceof Error
+            ? embeddingError.message
+            : "Embedding generation failed."
+        );
+      } catch {}
+    }
+
+    revalidatePath("/notes");
+    revalidatePath(`/notes/${input.noteId}`);
+
+    return {
+      error: null,
+      note: mapNoteRecord(noteRecord),
+    };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unable to apply the auto-organize suggestions.",
+      note: null,
+    };
+  }
 }

@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 
 import { buildSignInPath } from "@/lib/auth/redirects";
+import { readAuthCookies } from "@/lib/auth/cookies";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getAutoOrganizeAvailability } from "@/lib/notes/auto-organize";
 import { listNoteImagesForCurrentUser } from "@/lib/notes/images";
 import {
   getNoteByIdForCurrentUser,
@@ -11,9 +13,13 @@ import { NoteEditorShell } from "@/components/notes/note-editor-shell";
 
 interface NoteEditorPageProps {
   params: Promise<{ noteId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function NoteEditorPage({ params }: NoteEditorPageProps) {
+export default async function NoteEditorPage({
+  params,
+  searchParams,
+}: NoteEditorPageProps) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -22,9 +28,18 @@ export default async function NoteEditorPage({ params }: NoteEditorPageProps) {
   }
 
   const { noteId } = await params;
-  const [note, suggestedTags] = await Promise.all([
+  const { accessToken } = await readAuthCookies();
+  const requestedAutoOpen = await searchParams;
+  const [note, suggestedTags, autoOrganizeAvailability] = await Promise.all([
     getNoteByIdForCurrentUser(noteId),
     listSuggestedTagsForCurrentUser(),
+    accessToken
+      ? getAutoOrganizeAvailability(accessToken)
+      : Promise.resolve({
+          models: [],
+          preferredModelId: null,
+          error: "Auto-organize is unavailable right now.",
+        }),
   ]);
 
   if (!note) {
@@ -42,6 +57,10 @@ export default async function NoteEditorPage({ params }: NoteEditorPageProps) {
           initialNote={note}
           initialImages={initialImages}
           suggestedTags={suggestedTags}
+          autoOrganizeModels={autoOrganizeAvailability.models}
+          preferredAutoOrganizeModelId={autoOrganizeAvailability.preferredModelId}
+          autoOrganizeError={autoOrganizeAvailability.error}
+          initialAutoOrganizeOpen={requestedAutoOpen.autoOrganize === "1"}
         />
       </div>
     </main>

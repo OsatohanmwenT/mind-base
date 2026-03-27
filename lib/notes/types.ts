@@ -18,12 +18,59 @@ export interface Note {
   content: string;
   summary: string;
   tags: string[];
+  userTags?: string[];
+  aiTags?: string[];
   updatedAt: string;
   createdAt: string;
   imageCount: number;
   wordCount: number;
   status: NoteStatus;
   isPinned?: boolean;
+}
+
+export type AutoOrganizeQualityTier =
+  | "Budget"
+  | "Balanced"
+  | "Premium"
+  | "Experimental";
+
+export type AutoOrganizeSpeedTier = "Fast" | "Medium" | "Slow" | "Unknown";
+export type AutoOrganizeCostTier = "Low" | "Medium" | "High" | "Unknown";
+
+export interface AutoOrganizeModelOption {
+  id: string;
+  label: string;
+  provider: string;
+  qualityTier: AutoOrganizeQualityTier;
+  speedTier: AutoOrganizeSpeedTier;
+  costTier: AutoOrganizeCostTier;
+  recommended?: boolean;
+}
+
+export interface AutoOrganizeSuggestion {
+  title: string;
+  summary: string;
+  tags: string[];
+  modelId: string;
+  sourceHash: string;
+}
+
+export interface AutoOrganizeGenerateResult {
+  error: string | null;
+  suggestion: AutoOrganizeSuggestion | null;
+}
+
+export interface AutoOrganizeApplyInput {
+  noteId: string;
+  sourceHash: string;
+  title: string;
+  summary: string;
+  tags: string[];
+}
+
+export interface AutoOrganizeApplyResult {
+  error: string | null;
+  note: Note | null;
 }
 
 export interface NoteImage {

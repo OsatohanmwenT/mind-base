@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface NewNoteTagsInputProps {
   tags: string[];
+  aiTags?: string[];
   tagInput: string;
   suggestedTags: string[];
   onTagInputChange: (value: string) => void;
@@ -19,6 +20,7 @@ interface NewNoteTagsInputProps {
 
 export function NewNoteTagsInput({
   tags,
+  aiTags = [],
   tagInput,
   suggestedTags,
   onTagInputChange,
@@ -26,10 +28,11 @@ export function NewNoteTagsInput({
   onRemoveTag,
 }: NewNoteTagsInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const totalTagCount = tags.length + aiTags.length;
 
   function commitTag(raw: string) {
     const normalized = normalizeTag(raw);
-    if (normalized && tags.length < MAX_NOTE_TAGS) {
+    if (normalized && totalTagCount < MAX_NOTE_TAGS && !aiTags.includes(normalized)) {
       onAddTag(normalized);
     }
     onTagInputChange("");
@@ -44,7 +47,9 @@ export function NewNoteTagsInput({
     }
   }
 
-  const availableSuggestions = suggestedTags.filter((t) => !tags.includes(t));
+  const availableSuggestions = suggestedTags.filter(
+    (t) => !tags.includes(t) && !aiTags.includes(t)
+  );
 
   return (
     <div className="space-y-2 flex flex-col">
@@ -79,6 +84,15 @@ export function NewNoteTagsInput({
             </button>
           </Badge>
         ))}
+        {aiTags.map((tag) => (
+          <Badge
+            key={tag}
+            variant="outline"
+            className="font-mono text-[11px] text-primary/70 border-primary/20 bg-primary/5"
+          >
+            {tag}
+          </Badge>
+        ))}
         <input
           ref={inputRef}
           type="text"
@@ -89,15 +103,15 @@ export function NewNoteTagsInput({
             if (tagInput.trim()) commitTag(tagInput);
           }}
           placeholder={
-            tags.length >= MAX_NOTE_TAGS
+            totalTagCount >= MAX_NOTE_TAGS
               ? `Up to ${MAX_NOTE_TAGS} tags`
-              : tags.length === 0
+              : totalTagCount === 0
                 ? "Add tags…"
                 : ""
           }
           className="min-w-[80px] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/30"
           aria-label="Add a tag"
-          disabled={tags.length >= MAX_NOTE_TAGS}
+          disabled={totalTagCount >= MAX_NOTE_TAGS}
         />
       </div>
 

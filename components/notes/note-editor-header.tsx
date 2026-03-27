@@ -2,19 +2,20 @@
 
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { formatRelativeTime } from "@/lib/notes/selectors";
-import type { NoteEditorSaveState, NoteStatus } from "@/lib/notes/types";
+import type { NoteEditorSaveState } from "@/lib/notes/types";
 
 interface NoteEditorHeaderProps {
-  status: NoteStatus;
   saveState: NoteEditorSaveState;
   isDirty: boolean;
   saveError: string | null;
   lastSavedAt: string | null;
   canSave: boolean;
+  canAutoOrganize: boolean;
+  autoOrganizeDisabledReason?: string | null;
   onBack: () => void;
   onSave: () => void;
+  onAutoOrganize: () => void;
 }
 
 function getSaveStatusLabel({
@@ -43,14 +44,16 @@ function getSaveStatusLabel({
 }
 
 export function NoteEditorHeader({
-  status,
   saveState,
   isDirty,
   saveError,
   lastSavedAt,
   canSave,
+  canAutoOrganize,
+  autoOrganizeDisabledReason,
   onBack,
   onSave,
+  onAutoOrganize,
 }: NoteEditorHeaderProps) {
   const saveStatusLabel = getSaveStatusLabel({
     saveState,
@@ -59,79 +62,58 @@ export function NoteEditorHeader({
   });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex items-center justify-between gap-4">
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        className="h-8 gap-1.5 text-[13px] text-muted-foreground w-fit"
+        className="h-8 gap-1.5 text-[13px] text-muted-foreground shrink-0"
         onClick={onBack}
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Back to notes
+        <span className="hidden sm:inline">Back to notes</span>
+        <span className="sm:hidden">Back</span>
       </Button>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">Edit note</h1>
-          {status === "organized" && (
-            <Badge
-              variant="secondary"
-              className="gap-1 font-mono text-[10px] text-primary/70 shrink-0"
-            >
-              <Sparkles className="h-2.5 w-2.5" />
-              organized
-            </Badge>
-          )}
-          {status === "draft" && (
-            <Badge
-              variant="outline"
-              className="font-mono text-[10px] text-muted-foreground/60 shrink-0"
-            >
-              draft
-            </Badge>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {saveStatusLabel && (
-            <span
-              className={`text-[11px] font-mono mr-1 ${
-                saveState === "error"
-                  ? "text-destructive/80"
-                  : "text-muted-foreground/50"
-              }`}
-              aria-live="polite"
-            >
-              {saveStatusLabel}
-            </span>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 text-[13px] gap-1.5 text-muted-foreground"
-            disabled
-            title="Auto-organize coming soon"
+      <div className="flex items-center gap-2 shrink-0">
+        {saveStatusLabel && (
+          <span
+            className={`hidden sm:inline text-[11px] font-mono mr-1 ${
+              saveState === "error"
+                ? "text-destructive/80"
+                : "text-muted-foreground/50"
+            }`}
+            aria-live="polite"
           >
-            <Sparkles className="h-3 w-3" />
-            Auto-organize
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            className="h-8 text-[13px]"
-            disabled={!canSave}
-            onClick={onSave}
-          >
-            {saveState === "saving"
-              ? "Saving..."
-              : saveState === "error" && isDirty
-                ? "Retry save"
-                : "Save"}
-          </Button>
-        </div>
+            {saveStatusLabel}
+          </span>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 text-[13px] gap-1.5 text-muted-foreground"
+          disabled={!canAutoOrganize}
+          title={autoOrganizeDisabledReason ?? undefined}
+          onClick={onAutoOrganize}
+        >
+          <Sparkles className="h-3 w-3" />
+          <span className="hidden sm:inline">Auto-organize</span>
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          className="h-8 text-[13px]"
+          disabled={!canSave}
+          onClick={onSave}
+        >
+          {saveState === "saving"
+            ? "Saving..."
+            : saveState === "error" && isDirty
+              ? "Retry"
+              : "Save"}
+        </Button>
       </div>
     </div>
   );

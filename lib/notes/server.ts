@@ -33,6 +33,8 @@ interface NoteRecord {
 
 export interface NoteWithTagsRecord extends NoteRecord {
   tags: string[] | null;
+  user_tags?: string[] | null;
+  ai_tags?: string[] | null;
 }
 
 interface SemanticNoteRecord extends NoteWithTagsRecord {
@@ -57,6 +59,8 @@ export function mapNoteRecord(record: NoteWithTagsRecord): Note {
     content: record.content,
     summary: record.summary,
     tags: record.tags ?? [],
+    userTags: record.user_tags ?? [],
+    aiTags: record.ai_tags ?? [],
     updatedAt: record.updated_at,
     createdAt: record.created_at,
     imageCount: Number(record.image_count ?? 0),

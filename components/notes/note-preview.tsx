@@ -124,11 +124,12 @@ export function NotePreview({ note }: NotePreviewProps) {
           variant="ghost"
           size="sm"
           className="h-8 text-xs gap-1.5 text-muted-foreground"
-          disabled
-          title="Auto-organize coming soon"
+          asChild
         >
-          <Sparkles className="h-3 w-3" />
-          Auto-organize
+          <Link href={`/notes/${note.id}?autoOrganize=1`}>
+            <Sparkles className="h-3 w-3" />
+            Auto-organize
+          </Link>
         </Button>
       </div>
     </div>
